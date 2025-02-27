@@ -14,7 +14,7 @@ const port = 3000;
 
 // เชื่อมต่อ MySQL
 const connection = mysql.createConnection({
-  host: "localhost",
+  host: "localhost", // ตรงนี้ต้องเปลี่ยน ถ้าใช้ docker
   user: "root",
   password: "",
   database: "msql_nodejs",
