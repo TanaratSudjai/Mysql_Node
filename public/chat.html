@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chat Room</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+      /* ✅ ตั้งค่าฟอนต์และพื้นหลัง */
+      body {
+        font-family: "Arial", sans-serif;
+        background-color: #000000;
+        text-align: center;
+        padding: 50px;
+      }
+
+      /* ✅ กล่อง Chat */
+      .container {
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        width: 90%;
+        margin: auto;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+        text-align: left;
+        position: relative;
+      }
+
+      /* ✅ ปุ่ม Logout ขวาบน */
+      .logout-btn {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background-color: red;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+
+      .logout-btn:hover {
+        background-color: darkred;
+      }
+
+      h2 {
+        color: #333;
+        text-align: center;
+      }
+
+      /* ✅ ส่วนแสดงชื่อผู้ใช้ */
+      .user-info {
+        font-size: 16px;
+        margin-bottom: 10px;
+        text-align: center;
+      }
+
+      /* ✅ กล่องข้อความแชท */
+      #chat {
+        list-style: none;
+        padding: 10px;
+        max-height: 300px;
+        overflow-y: auto;
+        border-radius: 6px;
+        background: #f9f9f9;
+        margin-bottom: 10px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* ✅ ข้อความแชท */
+      .chat-message {
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        margin: 5px;
+        border-radius: 12px;
+        font-size: 14px;
+        max-width: 70%;
+        word-wrap: break-word;
+      }
+
+      /* ✅ ข้อความของตัวเอง (Align Right) */
+      .my-message {
+        background-color: #000000;
+        color: white;
+        align-self: flex-end;
+        text-align: right;
+        flex-direction: row-reverse;
+      }
+
+      /* ✅ ข้อความของผู้อื่น (Align Left) */
+      .other-message {
+        background-color: #e0e0e0;
+        color: rgb(0, 0, 0);
+        align-self: flex-start;
+      }
+
+      /* ✅ แสดง Username */
+      .username {
+        font-weight: bold;
+        margin-bottom: 4px;
+        /* margin-left: 2px; */
+      }
+
+      /* ✅ Avatar (ไอคอนข้างหน้าชื่อ) */
+      .avatar {
+        width: 32px;
+        height: 32px;
+        background-color: #555;
+        color: white;
+        font-size: 16px;
+        font-weight: bold;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-transform: uppercase;
+        margin-right: 8px;
+      }
+
+      /* ✅ ช่องกรอกข้อความ */
+      .input-container {
+        display: flex;
+        gap: 10px;
+      }
+
+      .input-box {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+      }
+
+      /* ✅ ปุ่มส่งข้อความ */
+      .btn {
+        background-color: #218c53;
+        color: white;
+        border: none;
+        padding: 10px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background 0.3s ease;
+      }
+
+      .btn:hover {
+        background-color: #1a6d3b;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- ✅ ปุ่ม Logout ขวาบน -->
+      <button class="logout-btn" onclick="logout()">Logout</button>
+
+      <h2>Chat Room</h2>
+      <p class="user-info">
+        Logged in as: <b><span id="user-name"></span></b>
+      </p>
+
+      <!-- ✅ กล่องแสดงข้อความแชท -->
+      <ul id="chat"></ul>
+
+      <!-- ✅ ส่วนกรอกข้อความ -->
+      <div class="input-container">
+        <input
+          type="text"
+          id="message"
+          class="input-box"
+          placeholder="Type a message..."
+        />
+        <button class="btn" onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+
+    <script>
+      const socket = io();
+      const username = localStorage.getItem("username");
+
+      if (!username) {
+        window.location.href = "/login";
+      } else {
+        document.getElementById("user-name").textContent = username;
+      }
+
+      async function loadChatHistory() {
+        try {
+          const response = await fetch("/api/chat-history");
+          const messages = await response.json();
+          messages.forEach((msg) => {
+            displayMessage(msg.username, msg.message, msg.timestamp);
+          });
+        } catch (error) {
+          console.error("Error loading chat history:", error);
+        }
+      }
+
+      function displayMessage(sender, message, timestamp) {
+        const li = document.createElement("li");
+        li.classList.add("chat-message");
+
+        const isMe = sender === username;
+        li.classList.add(isMe ? "my-message" : "other-message");
+
+        const avatar = `<div class="avatar">${sender
+          .charAt(0)
+          .toUpperCase()}</div>`;
+
+        li.innerHTML = `
+          ${isMe ? "" : avatar}
+          <div>
+            <div class="username">${sender}</div>
+            ${message}
+            <span style="font-size:10px; color:gray; display:block; text-align: ${
+              isMe ? "right" : "left"
+            };">
+              ${new Date(timestamp).toLocaleTimeString()}
+            </span>
+          </div>
+          ${isMe ? avatar : ""}
+        `;
+
+        document.getElementById("chat").appendChild(li);
+      }
+
+      function sendMessage() {
+        const message = document.getElementById("message").value;
+        if (message) {
+          const chatData = { username, message };
+          socket.emit("chatMessage", chatData);
+          document.getElementById("message").value = "";
+        }
+      }
+
+      socket.on("chatMessage", (data) => {
+        displayMessage(data.username, data.message, new Date());
+      });
+
+      window.onload = loadChatHistory;
+
+      function logout() {
+        localStorage.removeItem("username");
+        window.location.href = "/login";
+      }
+
+      // ✅ เลื่อนลงอัตโนมัติเมื่อโหลดแชทเสร็จ
+      function scrollToBottom() {
+        const chatBox = document.getElementById("chat");
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+
+      async function loadChatHistory() {
+        try {
+          const response = await fetch("/api/chat-history");
+          const messages = await response.json();
+          messages.forEach((msg) => {
+            displayMessage(msg.username, msg.message, msg.timestamp);
+          });
+          scrollToBottom(); // ✅ เลื่อนลงล่างสุด
+        } catch (error) {
+          console.error("Error loading chat history:", error);
+        }
+      }
+    </script>
+  </body>
+</html>

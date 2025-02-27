@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login</title>
+    <style>
+      /* ✅ ตั้งค่าฟอนต์และพื้นหลัง */
+      body {
+        font-family: "Arial", sans-serif;
+        background-color: #000000; 
+        text-align: center;
+        padding: 50px;
+      }
+
+      /* ✅ กล่อง Login */
+      .container {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        width: 350px;
+        margin: auto;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+      }
+
+      h2 {
+        color: #333;
+        margin-bottom: 20px;
+        font-size: 22px;
+        text-align: center;
+      }
+
+      /* ✅ สไตล์ของ input */
+      .input-box {
+        width: 93%;
+        padding: 12px;
+        margin: 8px 0;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 16px;
+        background-color: #f9f9f9;
+      }
+
+      .input-box:focus {
+        outline: none;
+        border-color: #2ecc71;
+        background-color: #ffffff;
+      }
+
+      /* ✅ ปุ่ม Login */
+      .btn {
+        background-color: #000000;
+        color: white;
+        border: none;
+        padding: 12px;
+        width: 100%;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background 0.3s ease;
+      }
+
+      .btn:hover {
+        background-color: #646464;
+      }
+
+      /* ✅ ข้อความแจ้งเตือน */
+      .message {
+        color: red;
+        margin-top: 12px;
+        font-size: 14px;
+      }
+
+      .success {
+        color: #2ecc71;
+      }
+
+      /* ✅ ลิงก์ไป Register */
+      .register-link {
+        margin-top: 15px;
+        display: block;
+        color: #333;
+        font-size: 14px;
+        text-decoration: none;
+      }
+
+      .register-link a {
+        color: #000000;
+        font-weight: bold;
+        text-decoration: none;
+      }
+
+      .register-link a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>Login</h2>
+      <input type="text" id="username" class="input-box" placeholder="Enter your Username" required />
+      <input type="password" id="password" class="input-box" placeholder="Enter Your Password" required />
+      <button class="btn" onclick="login()">Login Now</button>
+      <p id="message" class="message"></p>
+
+      <!-- ✅ เพิ่มลิงก์ไปหน้า Register -->
+      <p class="register-link">
+        Don't have an account? <a href="/register">Register now</a>
+      </p>
+    </div>
+
+    <script>
+      async function login() {
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+        const message = document.getElementById("message");
+
+        if (!username || !password) {
+          message.textContent = "กรุณากรอกข้อมูลให้ครบถ้วน";
+          message.classList.remove("success");
+          message.classList.add("error");
+          return;
+        }
+
+        try {
+          const response = await fetch("/api/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            localStorage.setItem("username", data.username);
+            message.textContent = data.msg;
+            message.classList.remove("error");
+            message.classList.add("success");
+
+            if (data.redirect) {
+              setTimeout(() => {
+                window.location.href = data.redirect;
+              }, 1000);
+            }
+          } else {
+            message.textContent = data.error;
+            message.classList.remove("success");
+            message.classList.add("error");
+          }
+        } catch (error) {
+          message.textContent = "เกิดข้อผิดพลาด กรุณาลองใหม่";
+          message.classList.remove("success");
+          message.classList.add("error");
+        }
+      }
+    </script>
+  </body>
+</html>
