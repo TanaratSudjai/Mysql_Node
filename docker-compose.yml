@@ -1,0 +1,30 @@
+version: "3.1"
+
+services:
+  mysql:
+    image: mysql:latest
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root12345
+      MYSQL_DATABASE: msql_nodejs
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: root12345
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    restart: always
+    ports:
+      - 8001:80
+    environment:
+      - PMA_HOST=mysql  
+      - PMA_USER=root
+      - PMA_PASSWORD=root12345
+    depends_on:
+      - mysql
+
+volumes:
+  mysql_data:

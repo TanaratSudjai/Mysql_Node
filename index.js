@@ -16,7 +16,7 @@ const port = 3000;
 const connection = mysql.createConnection({
   host: "localhost", // ตรงนี้ต้องเปลี่ยน ถ้าใช้ docker
   user: "root",
-  password: "",
+  password: "root12345",
   database: "msql_nodejs",
 });
 
@@ -134,31 +134,31 @@ app.get("/chat", (req, res) =>
 
 // 📌 Socket.io สำหรับ Real-time Chat
 io.on("connection", (socket) => {
-    console.log("User connected");
+  console.log("User connected");
 
-    socket.on("chatMessage", (data) => {
-        const { username, message } = data;
+  socket.on("chatMessage", (data) => {
+    const { username, message } = data;
 
-        // ✅ ตรวจสอบว่าข้อความถูกส่งมาถูกต้อง
-        console.log(`Received message from ${username}: ${message}`);
+    // ✅ ตรวจสอบว่าข้อความถูกส่งมาถูกต้อง
+    console.log(`Received message from ${username}: ${message}`);
 
-        // ✅ บันทึกข้อความลงใน MySQL
-        const query = "INSERT INTO messages (username, message) VALUES (?, ?)";
-        connection.query(query, [username, message], (err, result) => {
-            if (err) {
-                console.error("❌ Error saving chat message:", err);
-                return;
-            }
-            console.log("✅ Message saved to database"); // ตรวจสอบว่าเซิร์ฟเวอร์บันทึกข้อความได้หรือไม่
-        });
-
-        // ✅ ส่งข้อความไปยังทุกคน
-        io.emit("chatMessage", data);
+    // ✅ บันทึกข้อความลงใน MySQL
+    const query = "INSERT INTO messages (username, message) VALUES (?, ?)";
+    connection.query(query, [username, message], (err, result) => {
+      if (err) {
+        console.error("❌ Error saving chat message:", err);
+        return;
+      }
+      console.log("✅ Message saved to database"); // ตรวจสอบว่าเซิร์ฟเวอร์บันทึกข้อความได้หรือไม่
     });
 
-    socket.on("disconnect", () => {
-        console.log("User disconnected");
-    });
+    // ✅ ส่งข้อความไปยังทุกคน
+    io.emit("chatMessage", data);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected");
+  });
 });
 
 // 📌 เริ่มเซิร์ฟเวอร์
