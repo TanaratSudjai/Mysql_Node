@@ -1,5 +1,5 @@
 const sql = require("../lib/config");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 exports.register = async (req, res) => {
   const { username, email, password } = req.body;
 

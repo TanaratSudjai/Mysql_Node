@@ -13,6 +13,8 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+    networks:
+      - app-network
 
   phpmyadmin:
     image: phpmyadmin:latest
@@ -20,11 +22,32 @@ services:
     ports:
       - 8001:80
     environment:
-      - PMA_HOST=mysql  
+      - PMA_HOST=mysql
       - PMA_USER=root
       - PMA_PASSWORD=root12345
     depends_on:
       - mysql
+    networks:
+      - app-network
+
+  app:
+    image: node:14
+    container_name: app
+    ports:
+      - "3000:3000"
+    build: .
+    depends_on:
+      - mysql
+    environment:
+      - PMA_HOST=mysql
+      - PMA_USER=root
+      - PMA_PASSWORD=root12345
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
 
 volumes:
   mysql_data:

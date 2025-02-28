@@ -1,6 +1,6 @@
 const express = require("express");
 const fs = require("fs");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const path = require("path");
 const http = require("http");
 const socketIo = require("socket.io");
@@ -16,14 +16,6 @@ const router = express.Router();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.resolve(__dirname, "public")));
-app.use(
-  session({
-    secret: "secret-key",
-    resave: false,
-    saveUninitialized: true,
-    cookie: { secure: false },
-  })
-);
 
 // 🔹 Import Routes Dynamically
 const routesPath = path.resolve(__dirname, "routes");
@@ -46,8 +38,8 @@ const servePage = (page) => (req, res) =>
 
 app.get("/", servePage("register"));
 app.get("/login", servePage("login"));
+app.get("/register", servePage("register"));
 app.get("/chat", servePage("chat"));
-
 // 🔹 Socket.io for Real-time Chat
 io.on("connection", (socket) => {
   console.log("User connected");
@@ -58,9 +50,9 @@ io.on("connection", (socket) => {
 
     try {
       await sql.query("INSERT INTO messages (username, message) VALUES (?, ?)", [
-          username,
-          message,
-        ]);
+        username,
+        message,
+      ]);
       io.emit("chatMessage", data);
     } catch (error) {
       console.error("❌ Error saving chat message:", error);
